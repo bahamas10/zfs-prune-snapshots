@@ -24,7 +24,7 @@ Note that this script will recurse through *all* of tank1 and
 Remove snapshots older than a month on the zones pool that start
 with the string "autosnap_"
 
-    zfs-prune-snapshots 1M -p 'autosnap_' zones
+    zfs-prune-snapshots -p 'autosnap_' 1M zones
 
 Timespec
 --------
@@ -60,7 +60,7 @@ Usage
         note that this script will recurse through *all* of tank1 and
         *all* datasets below tank2/backup
 
-        # zfs-prune-snapshots 1M -p 'autosnap_' zones
+        # zfs-prune-snapshots -p 'autosnap_' 1M zones
         remove snapshots older than a month on the zones pool that start
         with the string "autosnap_"
 
