@@ -9,7 +9,7 @@
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
-	usage: zfs-prune-snapshots [-hnv] [-p <prefix] <time> [[dataset1] ...]
+	usage: $prog [-hnv] [-p <prefix] <time> [[dataset1] ...]
 
 	remove snapshots from one or more zpools that match given criteria
 
@@ -132,12 +132,11 @@ shift
 pools=("$@")
 
 now=$(date +%s)
-cutoff=$((now - seconds))
 code=0
 while read -r snapshot creation; do
 	# ensure optional prefix matches
 	snapname=${snapshot#*@}
-	if [[ -n $prefix && $prefix != ${snapname:0:${#prefix}} ]]; then
+	if [[ -n $prefix && $prefix != "${snapname:0:${#prefix}}" ]]; then
 		debug "skipping $snapshot: doesn't match prefix $prefix"
 		continue
 	fi
