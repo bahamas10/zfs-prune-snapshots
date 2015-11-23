@@ -14,19 +14,19 @@ usage() {
 	remove snapshots from one or more zpools that match given criteria
 
 	examples
-	    # zfs-prune-snapshots 1w
+	    # $prog 1w
 	    remove snapshots older than a week across all zpools
 
-	    # zfs-prune-snapshots -vn 1w
+	    # $prog -vn 1w
 	    same as above, but with increased verbosity and without
 	    actually deleting any snapshots (dry-run)
 
-	    # zfs-prune-snapshots 3w tank1 tank2/backup
+	    # $prog 3w tank1 tank2/backup
 	    remove snapshots older than 3 weeks on tank1 and tank2/backup.
 	    note that this script will recurse through *all* of tank1 and
 	    *all* datasets below tank2/backup
 
-	    # zfs-prune-snapshots -p 'autosnap_' 1M zones
+	    # $prog -p 'autosnap_' 1M zones
 	    remove snapshots older than a month on the zones pool that start
 	    with the string "autosnap_"
 
