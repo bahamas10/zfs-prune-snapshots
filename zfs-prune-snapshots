@@ -133,7 +133,7 @@ pools=("$@")
 
 now=$(date +%s)
 code=0
-while read -r snapshot creation; do
+while read -r creation snapshot; do
 	# ensure optional prefix matches
 	snapname=${snapshot#*@}
 	if [[ -n $prefix && $prefix != "${snapname:0:${#prefix}}" ]]; then
@@ -157,5 +157,5 @@ while read -r snapshot creation; do
 		echo
 		zfs destroy "$snapshot" || code=1
 	fi
-done < <(zfs list -Hpo name,creation -t snapshot -r "${pools[@]}")
+done < <(zfs list -Hpo creation,name -t snapshot -r "${pools[@]}")
 exit "$code"
