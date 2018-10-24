@@ -46,6 +46,7 @@ usage() {
 	    -h             print this message and exit
 	    -n             dry-run, don't actually delete snapshots
 	    -p <prefix>    snapshot prefix string to match
+	    -q             quiet, do not printout removed snapshots
 	    -v             increase verbosity
 	EOF
 }
@@ -89,11 +90,13 @@ human() {
 dryrun=false
 verbosity=0
 prefix=
-while getopts 'hnp:v' option; do
+quiet=false
+while getopts 'hnqp:v' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
 		p) prefix=$OPTARG;;
+		q) quiet=true;;
 		v) ((verbosity++));;
 		*) usage; exit 1;;
 	esac
@@ -150,11 +153,15 @@ while read -r creation snapshot; do
 	fi
 
 	# remove the snapshot
-	echo -n "removing $snapshot: $human old"
+	if ! $quiet || $dryrun; then
+		echo -n "removing $snapshot: $human old"
+	fi
 	if $dryrun; then
 		echo ' <dry-run: no action taken>'
 	else
-		echo
+		if ! $quiet; then
+			echo
+		fi
 		zfs destroy "$snapshot" || code=1
 	fi
 done < <(zfs list -Hpo creation,name -t snapshot -r "${pools[@]}")
