@@ -1,0 +1,80 @@
+.TH ZFS\-PRUNE\-SNAPSHOTS 1 "NOV 2018" "User Commands"
+.SH NAME
+.PP
+\fB\fCzfs\-prune\-snapshots\fR \- Remove snapshots from one or more zpools that match
+given criteria
+.SH SYNOPSIS
+.PP
+\fB\fCzfs\-prune\-snapshots [OPTIONS] <time> [[DATASET1] ...]\fR
+.SH DESCRIPTION
+.PP
+Remove snapshots from one or more zpools that match a criteria given over the
+command line.
+.SH OPTIONS
+.TP
+\fB\fC\-h\fR
+print this message and exit
+.TP
+\fB\fC\-n\fR
+dry\-run, don't actually delete snapshots
+.TP
+\fB\fC\-p <prefix>\fR
+snapshot prefix string to match
+.TP
+\fB\fC\-q\fR
+quiet, do not printout removed snapshots
+.TP
+\fB\fC\-v\fR
+increase verbosity
+.TP
+\fB\fC\-V\fR
+print the version number and exit
+.PP
+\fB\fCTIMESPEC\fR
+.PP
+The first argument denotes how old a snapshot must be for it to be considered
+for deletion \- possible specifiers are
+.IP
+\fB\fCs\fR seconds
+.IP
+\fB\fCm\fR minutes
+.IP
+\fB\fCh\fR hours
+.IP
+\fB\fCd\fR days
+.IP
+\fB\fCw\fR weeks
+.IP
+\fB\fCM\fR months
+.IP
+\fB\fCy\fR years
+.SH EXAMPLES
+.TP
+\fB\fCzfs\-prune\-snapshots 1w\fR
+Remove snapshots older than a week across all zpools
+.TP
+\fB\fCzfs\-prune\-snapshots \-vn 1w\fR
+Same as above, but with increased verbosity and without actually deleting any
+snapshots (dry\-run)
+.TP
+\fB\fCzfs\-prune\-snapshots 3w tank1 tank2/backup\fR
+Remove snapshots older than 3 weeks on tank1 and tank2/backup.  Note that this
+script will recurse through \fIall\fP of tank1 and \fIall\fP datasets below
+tank2/backup
+.TP
+\fB\fCzfs\-prune\-snapshots \-p 'autosnap_' 1M zones\fR
+Remove snapshots older than a month on the zones pool that start with the
+string \fB\fC"autosnap_"\fR
+.SH BUGS
+.PP
+\[la]https://github.com/bahamas10/zfs-prune-snapshots\[ra]
+.SH AUTHOR
+.PP
+\fB\fCDave Eddy <bahamas10> <dave@daveeddy.com> (https://www.daveeddy.com)\fR
+.SH SEE ALSO
+.PP
+.BR zpool (1M), 
+.BR zfs (1M)
+.SH LICENSE
+.PP
+MIT License
