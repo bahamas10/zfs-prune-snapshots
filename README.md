@@ -84,6 +84,35 @@ Usage
         -v             increase verbosity
         -V             print the version number and exit
 
+Development Notes
+-----------------
+
+### Style
+
+[shellcheck](https://www.shellcheck.net/) is used to check bash style.  Use
+`make check` to run the style checker:
+
+    $ make check
+    awk 'length($0) > 80 { exit(1); }' zfs-prune-snapshots
+    shellcheck zfs-prune-snapshots
+
+Bash style guide: https://www.daveeddy.com/bash/
+
+### Manpage
+
+Use `make man` to regenerate the manpage:
+
+    $ make man
+    md2man-roff man/zfs-prune-snapshots.md > man/zfs-prune-snapshots.1
+    $ ./man/zfs-prune-snapshots.1
+    <man page opens>
+
+Manpages are generated with [md2man](https://github.com/sunaku/md2man) which
+requires `ruby-devel` to be installed.  Once `ruby` is installed, `md2man` can
+be installed locally with:
+
+    $ gem install --user-install md2man
+
 License
 -------
 

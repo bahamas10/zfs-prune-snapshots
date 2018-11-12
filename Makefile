@@ -30,4 +30,5 @@ uninstall:
 
 .PHONY: check
 check:
+	awk 'length($$0) > 80 { exit(1); }' $(NAME)
 	shellcheck $(NAME)
