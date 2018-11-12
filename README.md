@@ -80,7 +80,9 @@ Usage
         -h             print this message and exit
         -n             dry-run, don't actually delete snapshots
         -p <prefix>    snapshot prefix string to match
+        -q             quiet, do not printout removed snapshots
         -v             increase verbosity
+        -V             print the version number and exit
 
 License
 -------

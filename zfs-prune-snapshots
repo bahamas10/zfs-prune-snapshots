@@ -6,6 +6,8 @@
 # Date: November 20, 2015
 # License: MIT
 
+VERSION='v1.0.0'
+
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
@@ -48,6 +50,7 @@ usage() {
 	    -p <prefix>    snapshot prefix string to match
 	    -q             quiet, do not printout removed snapshots
 	    -v             increase verbosity
+	    -V             print the version number and exit
 	EOF
 }
 
@@ -91,13 +94,14 @@ dryrun=false
 verbosity=0
 prefix=
 quiet=false
-while getopts 'hnqp:v' option; do
+while getopts 'hnqp:vV' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
 		p) prefix=$OPTARG;;
 		q) quiet=true;;
 		v) ((verbosity++));;
+		V) echo "$VERSION"; exit 0;;
 		*) usage; exit 1;;
 	esac
 done
