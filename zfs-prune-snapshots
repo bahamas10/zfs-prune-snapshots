@@ -6,7 +6,7 @@
 # Date: November 20, 2015
 # License: MIT
 
-VERSION='v1.0.0'
+VERSION='v1.0.1'
 
 usage() {
 	local prog=${0##*/}
