@@ -20,13 +20,15 @@ clean:
 
 .PHONY: install
 install:
-	cp $(NAME) $(PREFIX)/bin/$(NAME)
-	cp man/$(MANPAGE) $(PREFIX)/share/man/man$(MAN_SECTION)/$(MANPAGE)
+	install -d $(DESTDIR)/$(PREFIX)/bin
+	install -d $(DESTDIR)/$(PREFIX)/share/man/man$(MAN_SECTION)
+	install -m 0755 $(NAME) $(DESTDIR)/$(PREFIX)/bin/$(NAME)
+	install -m 0644 man/$(MANPAGE) $(DESTDIR)/$(PREFIX)/share/man/man$(MAN_SECTION)/$(MANPAGE)
 
 .PHONY: uninstall
 uninstall:
-	rm -f $(PREFIX)/bin/$(NAME)
-	rm -f $(PREFIX)/share/man/man$(MAN_SECTION)/$(MANPAGE)
+	rm -f $(DESTDIR)/$(PREFIX)/bin/$(NAME)
+	rm -f $(DESTDIR)/$(PREFIX)/share/man/man$(MAN_SECTION)/$(MANPAGE)
 
 .PHONY: check
 check:
