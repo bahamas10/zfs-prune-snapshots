@@ -11,7 +11,7 @@ VERSION='v1.0.1'
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
-	usage: $prog [-hnv] [-p <prefix] <time> [[dataset1] ...]
+	usage: $prog [-hnv] [-p <prefix>] [-s <suffix>] <time> [[dataset1] ...]
 
 	remove snapshots from one or more zpools that match given criteria
 
@@ -32,6 +32,10 @@ usage() {
 	    remove snapshots older than a month on the zones pool that start
 	    with the string "autosnap_"
 
+	    # $prog -s '_frequent' 2M tank
+	    remove snapshots older than two months on the tank pool that end
+	    with the string "_frequent"
+
 	timespec
 	    the first argument denotes how old a snapshot must be for it to
 	    be considered for deletion - possible specifiers are
@@ -48,6 +52,7 @@ usage() {
 	    -h             print this message and exit
 	    -n             dry-run, don't actually delete snapshots
 	    -p <prefix>    snapshot prefix string to match
+	    -s <suffix>    snapshot suffix string to match
 	    -q             quiet, do not printout removed snapshots
 	    -v             increase verbosity
 	    -V             print the version number and exit
@@ -93,12 +98,14 @@ human() {
 dryrun=false
 verbosity=0
 prefix=
+suffix=
 quiet=false
-while getopts 'hnqp:vV' option; do
+while getopts 'hnqp:s:vV' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
 		p) prefix=$OPTARG;;
+		s) suffix=$OPTARG;;
 		q) quiet=true;;
 		v) ((verbosity++));;
 		V) echo "$VERSION"; exit 0;;
@@ -145,6 +152,12 @@ while read -r creation snapshot; do
 	snapname=${snapshot#*@}
 	if [[ -n $prefix && $prefix != "${snapname:0:${#prefix}}" ]]; then
 		debug "skipping $snapshot: doesn't match prefix $prefix"
+		continue
+	fi
+
+	# ensure optional suffix matches
+	if [[ -n $suffix && $suffix != "${snapname: -${#suffix}}" ]]; then
+		debug "skipping $snapshot: doesn't match suffix $suffix"
 		continue
 	fi
 

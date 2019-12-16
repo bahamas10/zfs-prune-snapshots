@@ -21,6 +21,9 @@ dry\-run, don't actually delete snapshots
 \fB\fC\-p <prefix>\fR
 snapshot prefix string to match
 .TP
+\fB\fC\-s <suffix>\fR
+snapshot suffix string to match
+.TP
 \fB\fC\-q\fR
 quiet, do not printout removed snapshots
 .TP
@@ -65,6 +68,10 @@ tank2/backup
 \fB\fCzfs\-prune\-snapshots \-p 'autosnap_' 1M zones\fR
 Remove snapshots older than a month on the zones pool that start with the
 string \fB\fC"autosnap_"\fR
+.TP
+\fB\fCzfs\-prune\-snapshots \-s '_frequent' 2M tank\fR
+Remove snapshots older than two months on the tank pool that end with the
+string \fB\fC"_frequent"\fR
 .SH BUGS
 .PP
 \[la]https://github.com/bahamas10/zfs-prune-snapshots\[ra]
