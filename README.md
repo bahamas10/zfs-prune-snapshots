@@ -26,6 +26,11 @@ with the string "autosnap_"
 
     zfs-prune-snapshots -p 'autosnap_' 1M zones
 
+Remove snapshots older than two months on the tank pool that end
+with the string "_frequent"
+
+    zfs-prune-snapshots -s '_frequent' 2M tank
+
 Timespec
 --------
 
@@ -64,6 +69,10 @@ Usage
         remove snapshots older than a month on the zones pool that start
         with the string "autosnap_"
 
+        # zfs-prune-snapshots -s '_frequent' 2M tank
+        remove snapshots older than two months on the tank pool that end
+        with the string "_frequent"
+
     timespec
         the first argument denotes how old a snapshot must be for it to
         be considered for deletion - possible specifiers are
@@ -80,6 +89,7 @@ Usage
         -h             print this message and exit
         -n             dry-run, don't actually delete snapshots
         -p <prefix>    snapshot prefix string to match
+        -s <suffix>    snapshot suffix string to match
         -q             quiet, do not printout removed snapshots
         -v             increase verbosity
         -V             print the version number and exit
