@@ -4,6 +4,11 @@ ZFS Prune Snapshots Changes
 Not Yet Released
 ----------------
 
+`v1.1.0`
+--------
+
+- Support suffix matching (-s) (e7aa72160f8)
+
 `v1.0.1`
 --------
 
