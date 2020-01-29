@@ -8,6 +8,9 @@
 
 VERSION='v1.1.0'
 
+# get PATH
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
@@ -94,6 +97,11 @@ human() {
 	done
 	echo '0 seconds'
 }
+
+if ! type -P "zfs" &>/dev/null; then
+	echo "Error! zfs command not found. Are you on the right machine?"
+	exit 1
+fi
 
 dryrun=false
 verbosity=0
