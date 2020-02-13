@@ -8,6 +8,11 @@
 
 VERSION='v1.1.0'
 
+# get PATH
+if [ -f /etc/environment ]; then
+	. /etc/environment
+fi
+
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
