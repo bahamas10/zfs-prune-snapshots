@@ -143,7 +143,16 @@ else
 fi
 
 shift
-pools=("$@")
+declare -a pools
+for myarg in "$@"; do
+	if ! $(zfs list $myarg &>/dev/null); then
+		if ! $quiet; then
+			echo "Pool $myarg does not exist."
+		fi
+	else
+		pools+=("$myarg")
+	fi
+done
 
 now=$(date +%s)
 code=0
