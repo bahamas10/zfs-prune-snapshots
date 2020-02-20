@@ -4,6 +4,8 @@ ZFS Prune Snapshots Changes
 Not Yet Released
 ----------------
 
+- Add zfs binary check ([#8](https://github.com/bahamas10/zfs-prune-snapshots/pull/8))
+
 `v1.1.0`
 --------
 
