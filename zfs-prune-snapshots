@@ -184,7 +184,7 @@ while read -r creation snapshot; do
 		if ! $quiet; then
 			echo
 		fi
-		zfs destroy "$snapshot" || code=1
+		zfs destroy -R "$snapshot" || code=1
 	fi
 done < <(zfs list -Hpo creation,name -t snapshot -r "${pools[@]}")
 exit "$code"
