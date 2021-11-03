@@ -33,6 +33,9 @@ OPTIONS
 `-s <suffix>`
   snapshot suffix string to match
 
+`-i`
+  invert matching of prefix and suffix
+
 `-q`
   quiet, do not printout removed snapshots
 
@@ -83,6 +86,10 @@ EXAMPLES
 `zfs-prune-snapshots -s '_frequent' 2M tank`
   Remove snapshots older than two months on the tank pool that end with the
   string `"_frequent"`
+
+`zfs-prune-snapshots -i -p 'autosnap_' 1M zones`
+  Remove snapshots older than a month on the zones pool that do not start
+  with the string `"autosnap_"`
 
 BUGS
 ----
