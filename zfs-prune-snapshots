@@ -6,7 +6,7 @@
 # Date: November 20, 2015
 # License: MIT
 
-VERSION='v1.1.0'
+VERSION='v1.2.0'
 
 usage() {
 	local prog=${0##*/}
@@ -36,9 +36,9 @@ usage() {
 	    remove snapshots older than two months on the tank pool that end
 	    with the string "_frequent"
 
-		# $prog -i -p 'autosnap_' 1M zones
+	    # $prog -i -p 'autosnap_' 1M zones
 	    remove snapshots older than a month on the zones pool that do not
-		start with the string "autosnap_"
+	    start with the string "autosnap_"
 
 	timespec
 	    the first argument denotes how old a snapshot must be for it to
@@ -57,7 +57,7 @@ usage() {
 	    -n             dry-run, don't actually delete snapshots
 	    -p <prefix>    snapshot prefix string to match
 	    -s <suffix>    snapshot suffix string to match
-	    -i			   invert matching of prefix and suffix
+	    -i             invert matching of prefix and suffix
 	    -q             quiet, do not printout removed snapshots
 	    -v             increase verbosity
 	    -V             print the version number and exit

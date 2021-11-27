@@ -4,7 +4,13 @@ ZFS Prune Snapshots Changes
 Not Yet Released
 ----------------
 
+- (nothing)
+
+`v1.2.0`
+--------
+
 - Add zfs binary check ([#8](https://github.com/bahamas10/zfs-prune-snapshots/pull/8))
+- Support inverting of prefix/suffix match ([#17](https://github.com/bahamas10/zfs-prune-snapshots/pull/17))
 
 `v1.1.0`
 --------
