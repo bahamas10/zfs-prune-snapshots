@@ -11,7 +11,7 @@ VERSION='v1.1.0'
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
-	usage: $prog [-hnv] [-p <prefix>] [-s <suffix>] <time> [[dataset1] ...]
+	usage: $prog [-hniqvV] [-p <prefix>] [-s <suffix>] <time> [[dataset1] ...]
 
 	remove snapshots from one or more zpools that match given criteria
 
@@ -36,6 +36,10 @@ usage() {
 	    remove snapshots older than two months on the tank pool that end
 	    with the string "_frequent"
 
+		# $prog -i -p 'autosnap_' 1M zones
+	    remove snapshots older than a month on the zones pool that do not
+		start with the string "autosnap_"
+
 	timespec
 	    the first argument denotes how old a snapshot must be for it to
 	    be considered for deletion - possible specifiers are
@@ -53,6 +57,7 @@ usage() {
 	    -n             dry-run, don't actually delete snapshots
 	    -p <prefix>    snapshot prefix string to match
 	    -s <suffix>    snapshot suffix string to match
+	    -i			   invert matching of prefix and suffix
 	    -q             quiet, do not printout removed snapshots
 	    -v             increase verbosity
 	    -V             print the version number and exit
@@ -104,11 +109,13 @@ dryrun=false
 verbosity=0
 prefix=
 suffix=
+invert=false
 quiet=false
-while getopts 'hnqp:s:vV' option; do
+while getopts 'hniqp:s:vV' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
+		i) invert=true;;
 		p) prefix=$OPTARG;;
 		s) suffix=$OPTARG;;
 		q) quiet=true;;
@@ -155,15 +162,29 @@ code=0
 while read -r creation snapshot; do
 	# ensure optional prefix matches
 	snapname=${snapshot#*@}
-	if [[ -n $prefix && $prefix != "${snapname:0:${#prefix}}" ]]; then
-		debug "skipping $snapshot: doesn't match prefix $prefix"
-		continue
+	if $invert; then
+		if [[ -n $prefix && $prefix == "${snapname:0:${#prefix}}" ]]; then
+			debug "skipping $snapshot: does match prefix $prefix"
+			continue
+		fi
+	else
+		if [[ -n $prefix && $prefix != "${snapname:0:${#prefix}}" ]]; then
+			debug "skipping $snapshot: doesn't match prefix $prefix"
+			continue
+		fi
 	fi
 
 	# ensure optional suffix matches
-	if [[ -n $suffix && $suffix != "${snapname: -${#suffix}}" ]]; then
-		debug "skipping $snapshot: doesn't match suffix $suffix"
-		continue
+	if $invert; then
+		if [[ -n $suffix && $suffix == "${snapname: -${#suffix}}" ]]; then
+			debug "skipping $snapshot: does match suffix $suffix"
+			continue
+		fi
+	else
+		if [[ -n $suffix && $suffix != "${snapname: -${#suffix}}" ]]; then
+			debug "skipping $snapshot: doesn't match suffix $suffix"
+			continue
+		fi
 	fi
 
 	# ensure snapshot is older than the cutoff time
