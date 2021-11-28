@@ -11,7 +11,7 @@ VERSION='v1.2.0'
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
-	usage: $prog [-hniqvV] [-p <prefix>] [-s <suffix>] <time> [[dataset1] ...]
+	usage: $prog [-hniqRvV] [-p <prefix>] [-s <suffix>] <time> [[dataset1] ...]
 
 	remove snapshots from one or more zpools that match given criteria
 
@@ -59,6 +59,7 @@ usage() {
 	    -s <suffix>    snapshot suffix string to match
 	    -i             invert matching of prefix and suffix
 	    -q             quiet, do not printout removed snapshots
+	    -R             recursively delete, pass '-R' directly to 'zfs destroy'
 	    -v             increase verbosity
 	    -V             print the version number and exit
 	EOF
@@ -105,13 +106,14 @@ if ! type -P zfs &>/dev/null; then
 	exit 1
 fi
 
+recursive=false
 dryrun=false
 verbosity=0
 prefix=
 suffix=
 invert=false
 quiet=false
-while getopts 'hniqp:s:vV' option; do
+while getopts 'hniqRp:s:vV' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
@@ -119,6 +121,7 @@ while getopts 'hniqp:s:vV' option; do
 		p) prefix=$OPTARG;;
 		s) suffix=$OPTARG;;
 		q) quiet=true;;
+		R) recursive=true;;
 		v) ((verbosity++));;
 		V) echo "$VERSION"; exit 0;;
 		*) usage; exit 1;;
@@ -157,6 +160,10 @@ fi
 shift
 pools=("$@")
 
+destroyargs=()
+if $recursive; then
+	destroyargs+=('-R')
+fi
 now=$(date +%s)
 code=0
 while read -r creation snapshot; do
@@ -205,7 +212,7 @@ while read -r creation snapshot; do
 		if ! $quiet; then
 			echo
 		fi
-		zfs destroy "$snapshot" || code=1
+		zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
 	fi
 done < <(zfs list -Hpo creation,name -t snapshot -r "${pools[@]}")
 exit "$code"

@@ -39,6 +39,9 @@ OPTIONS
 `-q`
   quiet, do not printout removed snapshots
 
+`-R`
+  recursively delete, pass '-R' directly to 'zfs destroy'
+
 `-v`
   increase verbosity
 
