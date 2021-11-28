@@ -71,7 +71,7 @@ debug() {
 }
 
 # given a time in seconds, return the "human readable" string
-human() {
+human-time() {
 	local seconds=$1
 	if ((seconds < 0)); then
 		((seconds *= -1))
@@ -99,6 +99,27 @@ human() {
 		fi
 	done
 	echo '0 seconds'
+}
+
+human-size() {
+	local bytes=$1
+
+	local times=(
+	$((bytes / 1024 / 1024 / 1024)) # gb
+	$((bytes / 1024 / 1024))        # mb
+	$((bytes / 1024))               # kb
+	$((bytes))                      # b
+	)
+	local names=(GB MB KB B)
+
+	local i
+	for ((i = 0; i < ${#names[@]}; i++)); do
+		if ((${times[$i]} >= 1)); then
+			echo "${times[$i]} ${names[$i]}"
+			return
+		fi
+	done
+	echo '0 B'
 }
 
 if ! type -P zfs &>/dev/null; then
@@ -166,7 +187,9 @@ if $recursive; then
 fi
 now=$(date +%s)
 code=0
-while read -r creation snapshot; do
+totalused=0
+count=0
+while read -r creation snapshot used _; do
 	# ensure optional prefix matches
 	snapname=${snapshot#*@}
 	if $invert; then
@@ -196,15 +219,17 @@ while read -r creation snapshot; do
 
 	# ensure snapshot is older than the cutoff time
 	delta=$((now - creation))
-	human=$(human "$delta")
+	human=$(human-time "$delta")
 	if ((delta <= seconds)); then
 		debug "skipping $snapshot: $human old"
 		continue
 	fi
 
 	# remove the snapshot
+	humanused=$(human-size "$used")
+
 	if ! $quiet || $dryrun; then
-		echo -n "removing $snapshot: $human old"
+		echo -n "removing $snapshot: $human old ($humanused)"
 	fi
 	if $dryrun; then
 		echo ' <dry-run: no action taken>'
@@ -214,5 +239,11 @@ while read -r creation snapshot; do
 		fi
 		zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
 	fi
-done < <(zfs list -Hpo creation,name -t snapshot -r "${pools[@]}")
+
+	((total += used))
+	((count++))
+done < <(zfs list -Hpo creation,name,used -t snapshot -r "${pools[@]}")
+
+echo "processed $count snapshots ($(human-size "$total"))"
+
 exit "$code"

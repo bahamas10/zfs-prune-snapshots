@@ -4,7 +4,7 @@ ZFS Prune Snapshots Changes
 Not Yet Released
 ----------------
 
-- (nothing)
+- Show snapshot size (used) and number of snapshots processed
 
 `v1.3.0`
 --------
