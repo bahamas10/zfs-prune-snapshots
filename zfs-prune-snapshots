@@ -244,6 +244,8 @@ while read -r creation snapshot used _; do
 	((count++))
 done < <(zfs list -Hpo creation,name,used -t snapshot -r "${pools[@]}")
 
-echo "processed $count snapshots ($(human-size "$total"))"
+if ! $quiet; then
+	echo "processed $count snapshots ($(human-size "$total"))"
+fi
 
 exit "$code"
