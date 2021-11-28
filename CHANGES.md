@@ -6,6 +6,11 @@ Not Yet Released
 
 - (nothing)
 
+`v1.3.0`
+--------
+
+- Add recursive deletion option (-R) (482420faba)
+
 `v1.2.0`
 --------
 
