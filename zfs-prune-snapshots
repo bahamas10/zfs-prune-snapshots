@@ -65,6 +65,10 @@ usage() {
 	EOF
 }
 
+log() {
+	$quiet || echo "$@"
+}
+
 debug() {
 	((verbosity >= 1)) && echo "$@"
 	return 0
@@ -179,17 +183,24 @@ else
 fi
 
 shift
-pools=("$@")
 
+pools=("$@")
 destroyargs=()
-if $recursive; then
-	destroyargs+=('-R')
-fi
 now=$(date +%s)
 code=0
 totalused=0
-count=0
-while read -r creation snapshot used _; do
+numsnapshots=0
+humanpools=${pools[*]}
+
+if $recursive; then
+	destroyargs+=('-R')
+fi
+
+# first pass of the pools (to calculate totals and filter unwanted datasets
+lines=()
+while read -r line; do
+	read -r creation snapshot used _ <<< "$line"
+
 	# ensure optional prefix matches
 	snapname=${snapshot#*@}
 	if $invert; then
@@ -219,33 +230,44 @@ while read -r creation snapshot used _; do
 
 	# ensure snapshot is older than the cutoff time
 	delta=$((now - creation))
-	human=$(human-time "$delta")
+	humantime=$(human-time "$delta")
 	if ((delta <= seconds)); then
-		debug "skipping $snapshot: $human old"
+		debug "skipping $snapshot: $humantime old"
 		continue
 	fi
 
-	# remove the snapshot
+	# we care about this dataset
+	((totalused += used))
+	((numsnapshots++))
+	lines+=("$line")
+done < <(zfs list -Hpo creation,name,used -t snapshot -r "${pools[@]}")
+
+humantotal=$(human-size "$totalused")
+
+log "found $numsnapshots snapshots ($humantotal) on pools: ${humanpools:-<all>}"
+
+# process snapshots found
+i=1
+for line in "${lines[@]}"; do
+	read -r creation snapshot used _ <<< "$line"
+
+	delta=$((now - creation))
+	humantime=$(human-time "$delta")
 	humanused=$(human-size "$used")
 
-	if ! $quiet || $dryrun; then
-		echo -n "removing $snapshot: $human old ($humanused)"
-	fi
 	if $dryrun; then
-		echo ' <dry-run: no action taken>'
-	else
-		if ! $quiet; then
-			echo
-		fi
+		log -n '[dry-run] '
+	fi
+
+	log "[$i/$numsnapshots] removing $snapshot: $humantime old ($humanused)"
+
+	if ! $dryrun; then
 		zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
 	fi
 
-	((total += used))
-	((count++))
-done < <(zfs list -Hpo creation,name,used -t snapshot -r "${pools[@]}")
+	((i++))
+done
 
-if ! $quiet; then
-	echo "processed $count snapshots ($(human-size "$total"))"
-fi
+log "processed $numsnapshots snapshots ($humantotal)"
 
 exit "$code"
