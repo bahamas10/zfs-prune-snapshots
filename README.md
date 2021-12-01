@@ -53,7 +53,7 @@ be considered for deletion - possible specifiers are
 Usage
 -----
 
-    usage: zfs-prune-snapshots [-hniqvV] [-p <prefix] <time> [[dataset1] ...]
+    usage: zfs-prune-snapshots [-hnliqRvV] [-p <prefix>] [-s <suffix>] <time> [[dataset1] ...]
 
     remove snapshots from one or more zpools that match given criteria
 
@@ -78,6 +78,10 @@ Usage
         remove snapshots older than two months on the tank pool that end
         with the string "_frequent"
 
+        # zfs-prune-snapshots -i -p 'autosnap_' 1M zones
+        remove snapshots older than a month on the zones pool that do not
+        start with the string "autosnap_"
+
     timespec
         the first argument denotes how old a snapshot must be for it to
         be considered for deletion - possible specifiers are
@@ -93,10 +97,13 @@ Usage
     options
         -h             print this message and exit
         -n             dry-run, don't actually delete snapshots
+        -l             list only mode, just list matching snapshots names
+                       without deleting (like dry-run mode with machine-parseable output)
         -p <prefix>    snapshot prefix string to match
         -s <suffix>    snapshot suffix string to match
-        -i			   invert matching of prefix and suffix
+        -i             invert matching of prefix and suffix
         -q             quiet, do not printout removed snapshots
+        -R             recursively delete, pass '-R' directly to 'zfs destroy'
         -v             increase verbosity
         -V             print the version number and exit
 

@@ -27,6 +27,10 @@ OPTIONS
 `-n`
   dry-run, don't actually delete snapshots
 
+`-l`
+  list only mode, just list matching snapshots names without deleting (like
+  dry-run mode with machine-parseable output)
+
 `-p <prefix>`
   snapshot prefix string to match
 

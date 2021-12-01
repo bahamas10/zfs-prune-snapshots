@@ -11,7 +11,7 @@ VERSION='v1.3.0'
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
-	usage: $prog [-hniqRvV] [-p <prefix>] [-s <suffix>] <time> [[dataset1] ...]
+	usage: $prog [-hnliqRvV] [-p <prefix>] [-s <suffix>] <time> [[dataset1] ...]
 
 	remove snapshots from one or more zpools that match given criteria
 
@@ -55,6 +55,8 @@ usage() {
 	options
 	    -h             print this message and exit
 	    -n             dry-run, don't actually delete snapshots
+	    -l             list only mode, just list matching snapshots names
+	                   without deleting (like dry-run mode with machine-parseable output)
 	    -p <prefix>    snapshot prefix string to match
 	    -s <suffix>    snapshot suffix string to match
 	    -i             invert matching of prefix and suffix
