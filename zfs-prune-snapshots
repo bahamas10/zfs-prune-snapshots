@@ -65,10 +65,6 @@ usage() {
 	EOF
 }
 
-log() {
-	$quiet || echo "$@"
-}
-
 debug() {
 	((verbosity >= 1)) && echo "$@"
 	return 0
@@ -133,19 +129,20 @@ fi
 
 recursive=false
 dryrun=false
+listonly=false
 verbosity=0
 prefix=
 suffix=
 invert=false
-quiet=false
-while getopts 'hniqRp:s:vV' option; do
+while getopts 'hniqlRp:s:vV' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
 		i) invert=true;;
+		l) listonly=true;;
 		p) prefix=$OPTARG;;
 		s) suffix=$OPTARG;;
-		q) quiet=true;;
+		q) exec 1>/dev/null;;
 		R) recursive=true;;
 		v) ((verbosity++));;
 		V) echo "$VERSION"; exit 0;;
@@ -236,38 +233,49 @@ while read -r line; do
 		continue
 	fi
 
+	# print the snapshot here if `-l`
+	if $listonly; then
+		echo "$snapshot"
+	fi
+
 	# we care about this dataset
 	((totalused += used))
 	((numsnapshots++))
 	lines+=("$line")
 done < <(zfs list -Hpo creation,name,used -t snapshot -r "${pools[@]}")
 
+# finish if running with `-l`
+if $listonly; then
+	debug "running in '-l' mode - exiting here"
+	exit 0
+fi
+
 humantotal=$(human-size "$totalused")
 
-log "found $numsnapshots snapshots ($humantotal) on pools: ${humanpools:-<all>}"
+echo "found $numsnapshots snapshots ($humantotal) on pools: ${humanpools:-<all>}"
 
 # process snapshots found
-i=1
+i=0
 for line in "${lines[@]}"; do
 	read -r creation snapshot used _ <<< "$line"
+
+	((i++))
 
 	delta=$((now - creation))
 	humantime=$(human-time "$delta")
 	humanused=$(human-size "$used")
 
 	if $dryrun; then
-		log -n '[dry-run] '
+		echo -n '[dry-run] '
 	fi
 
-	log "[$i/$numsnapshots] removing $snapshot: $humantime old ($humanused)"
+	echo "[$i/$numsnapshots] removing $snapshot: $humantime old ($humanused)"
 
 	if ! $dryrun; then
-		zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
+		echo zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
 	fi
-
-	((i++))
 done
 
-log "processed $numsnapshots snapshots ($humantotal)"
+echo "processed $numsnapshots snapshots ($humantotal)"
 
 exit "$code"
