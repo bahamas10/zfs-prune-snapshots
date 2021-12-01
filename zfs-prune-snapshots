@@ -274,7 +274,7 @@ for line in "${lines[@]}"; do
 	echo "[$i/$numsnapshots] removing $snapshot: $humantime old ($humanused)"
 
 	if ! $dryrun; then
-		echo zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
+		zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
 	fi
 done
 
