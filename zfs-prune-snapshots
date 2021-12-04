@@ -165,11 +165,6 @@ human-size() {
 	echo '0 B'
 }
 
-if ! command -v zfs &>/dev/null; then
-	echo "Error! zfs command not found. Are you on the right machine?" >&2
-	exit 1
-fi
-
 recursive=false
 dryrun=false
 listonly=false
@@ -237,6 +232,11 @@ fi
 
 if ! now=$(get-epoch); then
 	echo 'failed to get epoch time' >&2
+	exit 1
+fi
+
+if ! command -v zfs &>/dev/null; then
+	echo "Error! zfs command not found. Are you on the right machine?" >&2
 	exit 1
 fi
 
