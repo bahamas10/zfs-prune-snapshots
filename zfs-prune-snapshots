@@ -68,7 +68,48 @@ usage() {
 }
 
 debug() {
-	((verbosity >= 1)) && echo "$@"
+	((verbosity >= 1)) && echo "$@" >&2
+	return 0
+}
+
+# get epoch time
+get-epoch() {
+	local time=0
+
+	# try bash built-in, date(1), and finally perl
+	time=$(printf '%(%s)T\n' -1 2>/dev/null)
+	_validate-epoch "$time" 'printf' && return 0
+
+	time=$(date '+%s' 2>/dev/null)
+	_validate-epoch "$time" 'date'   && return 0
+
+	time=$(perl -le 'print time' 2>/dev/null)
+	_validate-epoch "$time" 'perl'   && return 0
+
+	return 1
+}
+
+# validate a given epoch time for sanity
+_validate-epoch() {
+	local time=$1
+	local method=$2
+	local num_re='^([0-9]+)$'
+
+	debug "checking time received from $method"
+
+	if [[ -z $time ]]; then
+		debug "time invalid - empty"
+		return 1
+	elif ! [[ $time =~ $num_re ]]; then
+		debug "time invalid - not a number :: '$time'"
+		return 1
+	elif ! (( time > 0 )); then
+		debug "time invalid - not greater than 0 :: '$time'"
+		return 1
+	fi
+
+	debug "successfully got epoch time :: $time"
+	echo "$time"
 	return 0
 }
 
@@ -185,7 +226,6 @@ shift
 
 pools=("$@")
 destroyargs=()
-now=$(date +%s)
 code=0
 totalused=0
 numsnapshots=0
@@ -193,6 +233,11 @@ humanpools=${pools[*]}
 
 if $recursive; then
 	destroyargs+=('-R')
+fi
+
+if ! now=$(get-epoch); then
+	echo 'failed to get epoch time' >&2
+	exit 1
 fi
 
 # first pass of the pools (to calculate totals and filter unwanted datasets
@@ -278,6 +323,6 @@ for line in "${lines[@]}"; do
 	fi
 done
 
-echo "processed $numsnapshots snapshots ($humantotal)"
+echo "removed $numsnapshots snapshots ($humantotal)"
 
 exit "$code"
