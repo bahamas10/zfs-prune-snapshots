@@ -165,8 +165,8 @@ human-size() {
 	echo '0 B'
 }
 
-if ! type -P zfs &>/dev/null; then
-	echo "Error! zfs command not found. Are you on the right machine?"
+if ! command -v zfs &>/dev/null; then
+	echo "Error! zfs command not found. Are you on the right machine?" >&2
 	exit 1
 fi
 
