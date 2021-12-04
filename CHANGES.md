@@ -4,6 +4,11 @@ ZFS Prune Snapshots Changes
 Not Yet Released
 ----------------
 
+(nothing yet)
+
+`v1.4.0`
+--------
+
 - Show snapshot size (used) and number of snapshots processed (6e3891ddd1)
 - Add list only option (`-l`) to just list datasets that match (e4ba772f2c)
 
