@@ -246,7 +246,7 @@ fi
 # first pass of the pools (to calculate totals and filter unwanted datasets
 lines=()
 while read -r line; do
-	read -r creation used snapshot _ <<< "$line"
+	read -r creation used snapshot <<< "$line"
 
 	# ensure optional prefix matches
 	snapname=${snapshot#*@}
@@ -317,7 +317,7 @@ echo "found $numsnapshots snapshots ($humantotal) on pools: $humanpools"
 # process snapshots found
 i=0
 for line in "${lines[@]}"; do
-	read -r creation used snapshot _ <<< "$line"
+	read -r creation used snapshot <<< "$line"
 
 	((i++))
 
