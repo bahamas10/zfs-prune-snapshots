@@ -6,11 +6,18 @@ Not Yet Released
 
 (nothing yet)
 
+`v1.5.0`
+--------
+
+- Sanity check datasets existence before running
+ - `-q` will hide warnings for datesets not existing
+ - Based on ([#9](https://github.com/bahamas10/zfs-prune-snapshots/pull/9))
+
 `v1.4.1`
 --------
 
 - Allow snapshot datasets to contain spaces
-  ([#18](https://github.com/bahamas10/zfs-prune-snapshots/pull/18)
+  ([#18](https://github.com/bahamas10/zfs-prune-snapshots/pull/18))
 
 `v1.4.0`
 --------
