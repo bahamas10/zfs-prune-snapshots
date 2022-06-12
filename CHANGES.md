@@ -6,6 +6,12 @@ Not Yet Released
 
 (nothing yet)
 
+`v1.4.1`
+--------
+
+- Allow snapshot datasets to contain spaces
+  ([#18](https://github.com/bahamas10/zfs-prune-snapshots/pull/18)
+
 `v1.4.0`
 --------
 
