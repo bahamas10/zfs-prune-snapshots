@@ -56,20 +56,25 @@ options
     -h             print this message and exit
     -n             dry-run, don't actually delete snapshots
     -l             list only mode, just list matching snapshots names
-		   without deleting (like dry-run mode with machine-parseable
-		   output)
+                   without deleting (like dry-run mode with machine-parseable
+                   output)
     -p <prefix>    snapshot prefix string to match
     -s <suffix>    snapshot suffix string to match
     -i             invert matching of prefix and suffix
     -q             quiet, do not printout removed snapshots
-    -R             recursively delete, pass '-R' directly to 'zfs destroy'
-    -v             increase verbosity
+    -e             exit on zfs destroy error
+    -r             recursively destroy all children.
+    -R             recursively destroy all dependents, including cloned	file systems
+                   outside the target hierarchy: pass '-R' directly to 'zfs destroy'
+                   if -R and -r are used together, the last option will be effective and discard the previous ones
+    -v             increase zfs verbosity (pass -v to zfs destroy command). Useful when used with -n and -d
+    -d             debug messages: show more verbosity and debug messages (including skipped snapshots). Useful when used with -n and -v
     -V             print the version number and exit
 EOF
 }
 
 debug() {
-	((verbosity >= 1)) && echo '>' "$@" >&2
+	((debugging >= 1)) && echo '>' "$@" >&2
 	return 0
 }
 
@@ -168,14 +173,17 @@ human-size() {
 }
 
 recursive=false
+recursive_extended=false
 dryrun=false
 listonly=false
-verbosity=0
+debugging=0
+verbose=false
 prefix=
 suffix=
 invert=false
 quiet=false
-while getopts 'hniqlRp:s:vV' option; do
+error_exit=false
+while getopts 'hniqelRrp:s:vdV' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
@@ -184,13 +192,22 @@ while getopts 'hniqlRp:s:vV' option; do
 		p) prefix=$OPTARG;;
 		s) suffix=$OPTARG;;
 		q) quiet=true; exec 1>/dev/null;;
-		R) recursive=true;;
-		v) ((verbosity++));;
+		e) error_exit=true;;
+		r) recursive=true;;
+		R) recursive_extended=true;;
+		d) ((debugging++));;
+		v) verbose=true;;
 		V) echo "$VERSION"; exit 0;;
 		*) usage; exit 1;;
 	esac
 done
 shift "$((OPTIND - 1))"
+
+# check arguments validity
+if $recursive && $recursive_extended; then
+	echo 'cannot specify -r and -R together' >&2
+	exit 1
+fi
 
 # extract the first argument - the timespec - and
 # convert it to seconds
@@ -222,13 +239,26 @@ fi
 
 shift
 
-destroyargs=()
+destroyargs=()  #zfs destroy
+list_args=()    #zfs list
 code=0
 totalused=0
 numsnapshots=0
 
-if $recursive; then
+if $recursive_extended; then
 	destroyargs+=('-R')
+	$listonly && list_args+=('-r')
+elif $recursive; then
+	destroyargs+=('-r')
+	$listonly && list_args+=('-r')
+fi
+
+if $dryrun; then
+	destroyargs+=('-n')
+fi
+
+if $verbose; then
+	destroyargs+=('-vp')
 fi
 
 if ! now=$(get-epoch); then
@@ -330,7 +360,7 @@ while read -r line; do
 	((totalused += used))
 	((numsnapshots++))
 	lines+=("$line")
-done < <(zfs list -Hpo creation,used,name -t snapshot -r "${pools[@]}")
+done < <(zfs list -Hpo creation,used,name -t snapshot "${list_args[@]}" "${pools[@]}")
 
 # finish if running with `-l`
 if $listonly; then
@@ -359,8 +389,12 @@ for line in "${lines[@]}"; do
 
 	echo "[$i/$numsnapshots] removing $snapshot: $ht old ($hu)"
 
-	if ! $dryrun; then
-		zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
+	zfs destroy "${destroyargs[@]}" "$snapshot"
+	code=$?
+
+	if $error_exit && ((code != 0)); then
+		debug "ZFS error: aborting job..."
+		break
 	fi
 done
 
