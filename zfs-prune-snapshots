@@ -25,8 +25,21 @@ examples
 
     # $prog 3w tank1 tank2/backup
     remove snapshots older than 3 weeks on tank1 and tank2/backup.
-    note that this script will recurse through *all* of tank1 and
-    *all* datasets below tank2/backup
+
+    # $prog -rv 3w tank1
+    remove snapshots older than 3 weeks recursively on tank1, with increased verbosity
+    note that this will recurse through *all* of tank1 datasets below tank1
+
+    # $prog -rnv 3w tank1
+    same as above but in dry-mode: only show snapshots that would be removed if the command is ran without -n
+    note that this will recurse through *all* of tank1 datasets below tank1
+    use this command to list any snapshot dependant clones that would be removed by -R command
+
+    # $prog -Rv 3w tank1
+    remove snapshots older than 3 weeks recursively on tank1, including any dependant clones, with increased verbosity for a detailed output
+    note that this will recurse through *all* of tank1 datasets below tank1 and any tank1 cloned snapshot even outside of tank1
+    before using -R, it is strongly advised to check the results by first running with options -rvn
+    to properly show the deleted snapshots, always use -R in association to -v for increased zfs output details
 
     # $prog -p 'autosnap_' 1M zones
     remove snapshots older than a month on the zones pool that start
@@ -56,20 +69,26 @@ options
     -h             print this message and exit
     -n             dry-run, don't actually delete snapshots
     -l             list only mode, just list matching snapshots names
-		   without deleting (like dry-run mode with machine-parseable
-		   output)
+                   without deleting (like dry-run mode with machine-parseable
+                   output)
     -p <prefix>    snapshot prefix string to match
     -s <suffix>    snapshot suffix string to match
     -i             invert matching of prefix and suffix
     -q             quiet, do not printout removed snapshots
-    -R             recursively delete, pass '-R' directly to 'zfs destroy'
-    -v             increase verbosity
+    -e             exit on zfs destroy error
+    -r             recursively destroy all children.
+    -R             recursively destroy all dependents, including cloned file systems
+                   outside the target hierarchy: passes '-R' directly to 'zfs destroy'
+                   it is better used with -v option to properly list deleted clones
+                   it is strongly advised to first use -rvn to see what would be deleted, before issuing -Rv
+    -v             increase zfs verbosity (pass -vp to zfs destroy command). Useful when used with -n and -d
+    -d             debug messages: show more verbosity and debug messages (including skipped snapshots). Useful when used with -n and -v
     -V             print the version number and exit
 EOF
 }
 
 debug() {
-	((verbosity >= 1)) && echo '>' "$@" >&2
+	((debugging >= 1)) && echo '>' "$@" >&2
 	return 0
 }
 
@@ -168,14 +187,17 @@ human-size() {
 }
 
 recursive=false
+recursive_extended=false
 dryrun=false
 listonly=false
-verbosity=0
+debugging=0
+verbose=false
 prefix=
 suffix=
 invert=false
 quiet=false
-while getopts 'hniqlRp:s:vV' option; do
+error_exit=false
+while getopts 'hniqelRrp:s:vdV' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
@@ -184,13 +206,22 @@ while getopts 'hniqlRp:s:vV' option; do
 		p) prefix=$OPTARG;;
 		s) suffix=$OPTARG;;
 		q) quiet=true; exec 1>/dev/null;;
-		R) recursive=true;;
-		v) ((verbosity++));;
+		e) error_exit=true;;
+		r) recursive=true;;
+		R) recursive_extended=true;;
+		d) ((debugging++));;
+		v) verbose=true;;
 		V) echo "$VERSION"; exit 0;;
 		*) usage; exit 1;;
 	esac
 done
 shift "$((OPTIND - 1))"
+
+# check arguments validity
+if $recursive && $recursive_extended; then
+	echo 'cannot specify -r and -R together' >&2
+	exit 1
+fi
 
 # extract the first argument - the timespec - and
 # convert it to seconds
@@ -222,13 +253,56 @@ fi
 
 shift
 
-destroyargs=()
+destroyargs=()  #zfs destroy
+list_args=()    #zfs list
 code=0
 totalused=0
 numsnapshots=0
 
-if $recursive; then
+if $listonly; then
+	if $recursive; then
+		list_args+=('-r')
+	elif $recursive_extended; then
+		while true; do
+			echo 'Using -R with -l will not list dependant clones.'
+			echo 'To list dependant clones, you should use -rnv option.'
+			read -rp 'Are you sure you wish to proceed (y/n) ' yn
+			case $yn in 
+				[yY]) debug "using -R -l"
+					  list_args+=('-r')
+					  break;;
+				[nN]) debug "exiting..."
+					  exit;;
+				*)    echo 'invalid response';;
+			esac
+		done
+	fi
+elif $recursive; then
+	destroyargs+=('-r')
+elif $recursive_extended; then
 	destroyargs+=('-R')
+fi
+
+if $dryrun; then
+	destroyargs+=('-n')
+	if $recursive_extended; then
+		while true; do
+			echo 'Using -R with -n will not list dependant clones because of a current zfs bug.'
+			echo 'To list dependant clones, you should use -rnv option.'
+			read -rp 'Are you sure you wish to proceed (y/n) ' yn
+			case $yn in 
+				[yY]) debug "using -R -n"
+					  break;;
+				[nN]) debug "exiting..."
+					  exit;;
+				*)    echo 'invalid response';;
+			esac
+		done
+	fi
+fi
+
+if $verbose; then
+	destroyargs+=('-vp')
 fi
 
 if ! now=$(get-epoch); then
@@ -330,7 +404,7 @@ while read -r line; do
 	((totalused += used))
 	((numsnapshots++))
 	lines+=("$line")
-done < <(zfs list -Hpo creation,used,name -t snapshot -r "${pools[@]}")
+done < <(zfs list -Hpo creation,used,name -t snapshot "${list_args[@]}" "${pools[@]}")
 
 # finish if running with `-l`
 if $listonly; then
@@ -359,8 +433,12 @@ for line in "${lines[@]}"; do
 
 	echo "[$i/$numsnapshots] removing $snapshot: $ht old ($hu)"
 
-	if ! $dryrun; then
-		zfs destroy "${destroyargs[@]}" "$snapshot" || code=1
+	zfs destroy "${destroyargs[@]}" "$snapshot"
+	code=$?
+
+	if $error_exit && ((code != 0)); then
+		debug "ZFS error: aborting job..."
+		break
 	fi
 done
 
