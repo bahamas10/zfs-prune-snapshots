@@ -284,16 +284,6 @@ lines=()
 while read -r line; do
 	read -r creation used snapshot <<< "$line"
 
-	fsname=${snapshot%@*}
-	if [[ $keep -gt 0 ]]; then
-
-		if (( ${kept_arr["$fsname"]:-0} < keep )); then
-			((kept_arr[$fsname]++))
-			debug "skipping $snapshot: kept ${kept_arr["$fsname"]}/$keep"
-			continue
-		fi
-	fi
-
 	# ensure optional prefix matches
 	snapname=${snapshot#*@}
 	if [[ -n $prefix ]]; then
@@ -327,6 +317,17 @@ while read -r line; do
 
 		if ! $invert && ! $match; then
 			debug "skipping $snapshot: doesn't match suffix '$suffix'"
+			continue
+		fi
+	fi
+
+	# ensure at least keep snapshots are kept for each fsname
+	fsname=${snapshot%@*}
+	if [[ $keep -gt 0 ]]; then
+
+		if (( ${kept_arr["$fsname"]:-0} < keep )); then
+			((kept_arr[$fsname]++))
+			debug "skipping $snapshot: kept ${kept_arr["$fsname"]}/$keep"
 			continue
 		fi
 	fi
