@@ -40,6 +40,10 @@ examples
     remove snapshots older than a month on the zones pool that do not
     start with the string "autosnap_"
 
+    # $prog -k 3 6M
+    remove snapshots older than six months, but keep at least 3 snapshots
+    per filesystemname
+
 timespec
     the first argument denotes how old a snapshot must be for it to
     be considered for deletion - possible specifiers are
@@ -60,6 +64,7 @@ options
 		   output)
     -p <prefix>    snapshot prefix string to match
     -s <suffix>    snapshot suffix string to match
+    -k <keep>      number of snapshots to keep at least per filesystemname
     -i             invert matching of prefix and suffix
     -q             quiet, do not printout removed snapshots
     -R             recursively delete, pass '-R' directly to 'zfs destroy'
@@ -173,9 +178,10 @@ listonly=false
 verbosity=0
 prefix=
 suffix=
+keep=0
 invert=false
 quiet=false
-while getopts 'hniqlRp:s:vV' option; do
+while getopts 'hniqlRp:s:k:vV' option; do
 	case "$option" in
 		h) usage; exit 0;;
 		n) dryrun=true;;
@@ -183,6 +189,7 @@ while getopts 'hniqlRp:s:vV' option; do
 		l) listonly=true;;
 		p) prefix=$OPTARG;;
 		s) suffix=$OPTARG;;
+		k) keep=$OPTARG;;
 		q) quiet=true; exec 1>/dev/null;;
 		R) recursive=true;;
 		v) ((verbosity++));;
@@ -270,11 +277,22 @@ fi
 
 humanpools=${pools[*]}
 humanpools=${humanpools:-<all>}
+declare -A kept_arr
 
 # first pass of the pools (to calculate totals and filter unwanted datasets
 lines=()
 while read -r line; do
 	read -r creation used snapshot <<< "$line"
+
+	fsname=${snapshot%@*}
+	if [[ $keep -gt 0 ]]; then
+
+		if (( ${kept_arr["$fsname"]:-0} < keep )); then
+			((kept_arr[$fsname]++))
+			debug "skipping $snapshot: kept ${kept_arr["$fsname"]}/$keep"
+			continue
+		fi
+	fi
 
 	# ensure optional prefix matches
 	snapname=${snapshot#*@}
@@ -330,7 +348,15 @@ while read -r line; do
 	((totalused += used))
 	((numsnapshots++))
 	lines+=("$line")
-done < <(zfs list -Hpo creation,used,name -t snapshot -r "${pools[@]}")
+done < <(
+	zfs list \
+		-H \
+		-p \
+		-o creation,used,name \
+		-s creation \
+		-t snapshot \
+		-r "${pools[@]}"
+	) # sort starting with newest
 
 # finish if running with `-l`
 if $listonly; then
